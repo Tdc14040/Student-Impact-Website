@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Admin — Assessments</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* small admin overrides for table */
+    .admin-container { max-width:1100px; margin:30px auto; padding:20px; }
+    .admin-header { display:flex; gap:12px; align-items:center; justify-content:space-between; }
+    .admin-actions { display:flex; gap:8px; align-items:center; }
+    table { width:100%; border-collapse:collapse; margin-top:16px; }
+    th, td { text-align:left; padding:8px; border-bottom:1px solid rgba(148,163,184,0.08); font-size:0.95rem; }
+    th { color:#38bdf8; }
+    .muted { color:#94a3b8; font-size:0.9rem; }
+    .search-input { padding:8px 10px; border-radius:8px; border:1px solid rgba(148,163,184,0.12); }
+    @media (max-width:700px){ .admin-header { flex-direction:column; align-items:flex-start; gap:10px; } table { font-size:0.85rem; } }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <div class="admin-header">
+      <div>
+        <h2>Admin — Student Assessments</h2>
+        <div class="muted">View and export recent submissions</div>
+      </div>
+
+      <div class="admin-actions">
+        <input id="searchBox" class="search-input" placeholder="search by platform / id / score..." />
+        <button id="refreshBtn" class="btn-main">Refresh</button>
+        <button id="downloadBtn" class="btn-main">Download CSV</button>
+      </div>
+    </div>
+
+    <div id="message" style="margin-top:12px;color:#f1f5f9"></div>
+
+    <div style="overflow:auto">
+      <table id="resultsTable" aria-live="polite">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Hours/Day</th>
+            <th>Short Video (min)</th>
+            <th>Platform</th>
+            <th>Sleep</th>
+            <th>Procrastination</th>
+            <th>Stress</th>
+            <th>Performance</th>
+            <th>Escapism</th>
+            <th>Social</th>
+            <th>Learning</th>
+            <th>Negative</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody id="resultsTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
