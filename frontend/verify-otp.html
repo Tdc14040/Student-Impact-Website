@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/><title>Verify OTP</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<div style="max-width:420px;margin:60px auto;padding:18px;border-radius:12px;border:1px solid #ddd;background:#fff;">
+  <h2>Enter OTP</h2>
+  <input id="otp" placeholder="6-digit OTP" style="width:100%;padding:8px;margin:6px 0"/><br>
+  <button onclick="verify()">Verify OTP</button>
+  <p id="msg" style="color:red"></p>
+</div>
+<script>
+const email = new URLSearchParams(window.location.search).get('email') || '';
+function verify(){
+  const otp = document.getElementById('otp').value;
+  fetch('/api/admin/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email, otp }) })
+  .then(r=>r.json()).then(d=>{
+    if(d.resetToken){ localStorage.setItem('resetToken', d.resetToken); window.location='reset-password.html'; }
+    else document.getElementById('msg').textContent = d.error || 'Invalid OTP';
+  });
+}
+</script>
+</body>
+</html>

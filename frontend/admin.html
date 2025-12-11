@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin — Assessments</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-container { max-width:1100px; margin:30px auto; padding:20px; }
+    .admin-header { display:flex; gap:12px; align-items:center; justify-content:space-between; }
+    .admin-actions { display:flex; gap:8px; align-items:center; }
+    table { width:100%; border-collapse:collapse; margin-top:16px; }
+    th, td { text-align:left; padding:8px; border-bottom:1px solid rgba(148,163,184,0.08); font-size:0.95rem; }
+    th { color:#38bdf8; }
+    .search-input { padding:8px 10px; border-radius:8px; border:1px solid rgba(148,163,184,0.12); }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <div class="admin-header">
+      <div>
+        <h2>Admin — Student Assessments</h2>
+        <div style="color:#94a3b8">View and export recent submissions</div>
+      </div>
+
+      <div class="admin-actions">
+        <input id="searchBox" class="search-input" placeholder="search by platform / id / score..." />
+        <button id="refreshBtn">Refresh</button>
+        <button id="downloadBtn">Download CSV</button>
+        <button id="logoutBtn">Logout</button>
+      </div>
+    </div>
+
+    <div id="message" style="margin-top:12px;color:#111"></div>
+
+    <div style="overflow:auto">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>Hours/Day</th><th>Short Video (min)</th><th>Platform</th><th>Sleep</th><th>Procrast</th><th>Stress</th><th>Perf</th><th>Escapism</th><th>Social</th><th>Learning</th><th>Negative</th><th>Created</th>
+          </tr>
+        </thead>
+        <tbody id="resultsTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+(function init(){
+  const token = localStorage.getItem('adminToken');
+  if(!token){ window.location='admin-login.html'; return; }
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{ localStorage.removeItem('adminToken'); window.location='admin-login.html'; });
+  document.getElementById('refreshBtn').addEventListener('click', loadData);
+  document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+  document.getElementById('searchBox').addEventListener('input', ()=> renderRows(window.__assessments||[], document.getElementById('searchBox').value.trim()));
+  loadData();
+
+  async function loadData(){
+    showMessage('Loading...');
+    try{
+      const res = await fetch('/api/assessments', { headers: { 'authorization': token } });
+      if(res.status===401 || res.status===403){ localStorage.removeItem('adminToken'); window.location='admin-login.html'; return; }
+      const data = await res.json();
+      window.__assessments = data;
+      renderRows(data, '');
+      showMessage('Loaded ' + data.length + ' records');
+    }catch(e){ console.error(e); showMessage('Failed to load: '+e.message, true); }
+  }
+
+  function showMessage(m, isError=false){ const el=document.getElementById('message'); el.textContent=m; el.style.color=isError?'#ff4d4f':'#333'; }
+  function renderRows(rows, filter){
+    const tbody=document.getElementById('resultsTbody'); tbody.innerHTML=''; filter=(filter||'').toLowerCase();
+    const filtered = rows.filter(r=>{ if(!filter) return true; return (String(r.student_id||'')+' '+String(r.main_platform||'')+' '+String(r.hours_per_day||'')+' '+String(r.negative_impact_label||'')).toLowerCase().includes(filter); });
+    for(const r of filtered){
+      const tr=document.createElement('tr');
+      tr.innerHTML = `<td>${r.student_id||''}</td><td>${r.hours_per_day||''}</td><td>${r.short_video_minutes||''}</td><td>${escapeHtml(r.main_platform)||''}</td><td>${r.sleep_quality||''}</td><td>${r.procrastination||''}</td><td>${r.stress_level||''}</td><td>${r.performance||''}</td><td>${formatNumber(r.escapism_score)}</td><td>${formatNumber(r.social_connection_score)}</td><td>${formatNumber(r.learning_score)}</td><td>${r.negative_impact_label||''}</td><td>${r.created_at||''}</td>`;
+      tbody.appendChild(tr);
+    }
+    if(filtered.length===0) tbody.innerHTML='<tr><td colspan="13" style="padding:12px;color:#94a3b8">No records found</td></tr>';
+  }
+  function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]); }
+  function formatNumber(x){ return (x===null||x===undefined)?'':Number(x).toFixed(2); }
+  function downloadCSV(){
+    const rows = window.__assessments||[]; if(!rows.length) return alert('No data'); const header = ["student_id","hours_per_day","short_video_minutes","main_platform","sleep_quality","procrastination","stress_level","performance","escapism_score","social_connection_score","learning_score","negative_impact_label","created_at"]; const csv=[header.join(',')]; for(const r of rows){ const line = header.map(h=>{ let v=r[h]===null||r[h]===undefined?'':String(r[h]); if(v.includes(',')||v.includes('"')) v='"'+v.replace(/"/g,'""')+'"'; return v; }).join(','); csv.push(line); } const blob=new Blob([csv.join('\n')], {type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='assessments.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+})();
+</script>
+</body>
+</html>
